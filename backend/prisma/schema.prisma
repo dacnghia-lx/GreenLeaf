@@ -1,0 +1,104 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Sản phẩm: cây cảnh, chậu, phân bón, thuốc trị bệnh...
+model Product {
+  ProductID   Int         @id @default(autoincrement())
+  ProductName String      @db.VarChar(200)
+  PathImage   String?     @db.VarChar(500)
+  ProductType ProductType @default(PLANT)
+  Quantity    Int         @default(0)
+  Unit        String      @default("cây") @db.VarChar(30)
+  Price       Decimal     @default(0) @db.Decimal(14, 0)
+  Description String?     @db.Text
+  CreateDate  DateTime    @default(now())
+  UpdateDate  DateTime    @updatedAt
+
+  orderItems OrderItem[]
+
+  @@index([ProductName])
+  @@index([ProductType])
+}
+
+enum ProductType {
+  PLANT       // Cây cảnh
+  BONSAI      // Bonsai
+  POT         // Chậu
+  FERTILIZER  // Phân bón
+  MEDICINE    // Thuốc trị bệnh
+  TOOL        // Dụng cụ
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  UserID     Int      @id @default(autoincrement())
+  FullName   String   @db.VarChar(100)
+  Email      String   @unique @db.VarChar(150)
+  Password   String
+  Phone      String?  @db.VarChar(20)
+  Address    String?
+  Role       Role     @default(USER)
+  CreateDate DateTime @default(now())
+  orders     Order[]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPING
+  DONE
+  CANCELLED
+}
+
+/// Hoá đơn
+model Order {
+  OrderID       Int         @id @default(autoincrement())
+  UserID        Int?
+  CustomerName  String      @db.VarChar(100)
+  Phone         String      @db.VarChar(20)
+  Address       String
+  Total         Decimal     @db.Decimal(14, 0)
+  PaymentMethod String      @default("COD") @db.VarChar(30)
+  Status        OrderStatus @default(PENDING)
+  CreateDate    DateTime    @default(now())
+  user          User?       @relation(fields: [UserID], references: [UserID])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  OrderItemID Int     @id @default(autoincrement())
+  OrderID     Int
+  ProductID   Int
+  Quantity    Int
+  Price       Decimal @db.Decimal(14, 0)
+  order       Order   @relation(fields: [OrderID], references: [OrderID], onDelete: Cascade)
+  product     Product @relation(fields: [ProductID], references: [ProductID])
+}
+
+/// Form liên hệ
+model Contact {
+  ContactID  Int      @id @default(autoincrement())
+  FullName   String   @db.VarChar(100)
+  Email      String   @db.VarChar(150)
+  Message    String
+  CreateDate DateTime @default(now())
+}
+
+/// Lịch sử chẩn đoán bệnh cây bằng AI
+model Diagnosis {
+  DiagnosisID Int      @id @default(autoincrement())
+  PathImage   String
+  Result      Json
+  CreateDate  DateTime @default(now())
+}
