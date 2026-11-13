@@ -69,11 +69,18 @@ model Order {
   Phone         String      @db.VarChar(20)
   Address       String
   Total         Decimal     @db.Decimal(14, 0)
+  Note          String?     @db.Text
+  /// COD | BANK (chuyển khoản) | EWALLET (ví điện tử) – cổng thanh toán là mô phỏng
   PaymentMethod String      @default("COD") @db.VarChar(30)
   Status        OrderStatus @default(PENDING)
+  PaidDate      DateTime?
   CreateDate    DateTime    @default(now())
+  UpdateDate    DateTime    @default(now()) @updatedAt
   user          User?       @relation(fields: [UserID], references: [UserID])
   items         OrderItem[]
+
+  @@index([UserID])
+  @@index([Status])
 }
 
 model OrderItem {
